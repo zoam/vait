@@ -8,4 +8,4 @@ Each script is independent and can generate a figure from the paper.
 If you have any questions or suggestions, please email me (maozhongfu@gmail.com).
 
 # License
-MIT
+LGPL3
