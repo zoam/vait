@@ -2,7 +2,7 @@ clear all;
 close all;
 clc;
 
-addpath("./commons");
+addpath("../commons");
 
 %% Set up simulation parameters.
 snr = 5;
@@ -31,18 +31,18 @@ rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF0, ...
     generator.mNs, generator.mNc, generator.mGamma, startVel, endVel);
 
 [rftEstimator] = rftEstimator.perform(sig);
-[figInd] = rftEstimator.visualize(figInd, 0, 100);
+[figInd] = rftEstimator.visualize(figInd);
 
 %% RDP
 mtdEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF0, ...
     generator.mNs, generator.mNc, generator.mGamma);
 
 [mtdEstimator] = mtdEstimator.perform(sig);
-[figInd] = mtdEstimator.visualize(figInd, 0, 100);
+[figInd] = mtdEstimator.visualize(figInd);
 
 %% VAIT
 vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, generator.mF0, ...
     generator.mNs, generator.mNc, generator.mGamma);
 
 [vaitEstimator] = vaitEstimator.perform(sig);
-[figInd] = vaitEstimator.visualize(figInd, 0, 100);
+[figInd] = vaitEstimator.visualize(figInd);

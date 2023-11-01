@@ -2,7 +2,7 @@ clear all;
 close all;
 clc;
 
-addpath("./commons");
+addpath("../commons");
 
 %% Set up simulation parameters.
 snrStart = -45;

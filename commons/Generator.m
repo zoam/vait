@@ -1,3 +1,6 @@
+% Written by: Maozhong Fu (maozhongfu@gmail.com)
+%
+% Distributed under the LGPL3 License.
 classdef Generator
     properties(Constant)
         mC = 299792458; % the speed of light

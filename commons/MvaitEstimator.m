@@ -1,3 +1,6 @@
+% Written by: Maozhong Fu (maozhongfu@gmail.com)
+%
+% Distributed under the LGPL3 License.
 classdef MvaitEstimator < Estimator
     properties
         mKappa; % phase correction term

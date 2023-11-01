@@ -1,3 +1,7 @@
+% Written by: Maozhong Fu (maozhongfu@gmail.com)
+%
+% Distributed under the LGPL3 License.
+
 function [z] = rft(x, np, nb, df, fc, pri, dv, vel_min, nv, c)
 
 fr = fc + ((0 : nb - 1) - (nb - 1) / 2) * df;

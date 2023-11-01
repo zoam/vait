@@ -2,7 +2,7 @@ clear all;
 close all;
 clc;
 
-addpath("./commons");
+addpath("../commons");
 
 %% Set up simulation parameters.
 snr = 5;
@@ -22,9 +22,9 @@ figInd = 0;
 generator = Generator(snr, nc, bw, f0, tc, tr, fs, r0, v0, a0, rcs);
 [sig] = generator.perform();
 
-%% Perform the proposed AR method together with the proposed cross-term suppression algorithm.
+%% Perform the proposed AR method.
 mvaitEstimator = MvaitEstimator(generator.mTr, generator.mTs, generator.mF0, ...
     generator.mNs, generator.mNc, generator.mGamma);
 
 [mvaitEstimator, ~] = mvaitEstimator.perform(sig);
-[figInd] = mvaitEstimator.visualize(figInd, 0, 100);
+[figInd] = mvaitEstimator.visualize(figInd);
