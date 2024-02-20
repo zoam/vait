@@ -1,6 +1,3 @@
-% Written by: Maozhong Fu (maozhongfu@gmail.com)
-%
-% Distributed under the LGPL3 License.
 classdef Generator
     properties(Constant)
         mC = 299792458; % the speed of light
@@ -16,7 +13,7 @@ classdef Generator
         mTc; % the chirp length
         mNs; % the sample number
         mNc; % the number of chirps in a coherent processing interval
-        mTr; % the chirp repeating iterval
+        mTr; % the chirp repeating interval
         mMaxRng; % the maximum unambiguous range [0, mMaxRng)
         mMaxVel; % the maximum unambiguous velocity [-mMaxVel, mMaxVel)
         mDr; % the range resolution
@@ -66,6 +63,7 @@ classdef Generator
             obj.mTs = 1 / obj.mFs;
             obj.mT0 = obj.mNs / 2 * obj.mTs;
             obj.mF0 = obj.mF0;
+%             obj.mF1 = obj.mF0 + obj.mGamma * (obj.mT0 + obj.mTauRm);
             obj.mF1 = obj.mF0 + obj.mGamma * (obj.mT0 + obj.mTauRm) - ...
                 obj.mGamma * (obj.mR0(1)) * 2 / obj.mC;
             obj.mLambda = obj.mC / obj.mF1;
@@ -82,7 +80,6 @@ classdef Generator
             obj.mTxSig = exp(1i * pi * obj.mGamma * obj.mFastTime.^2) .* ...
                 exp(1i * 2 * pi * obj.mF0 * obj.mFastTime);
             obj.mTgtNum = length(obj.mRcs);
-            
         end
 
         function [outputSig] = perform(obj)

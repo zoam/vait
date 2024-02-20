@@ -6,42 +6,46 @@ addpath("../commons");
 
 %% Set up simulation parameters.
 inputSnr = -25 : 5 : 15;
-nc = 128;
+nc = 512;
 bw = 150e6;
 f0 = 9e9;
-tc = 102.4e-6;
-tr = 120e-6;
-fs = 40e6;
-r0 = 80.42;
-v0 = 800.2;
-a0 = 600;
+tc = 500e-6;
+tr = 520e-6;
+fs = 5e5;
+r0 = 80.7;
+v0 = 30.02;
+a0 = 10;
 rcs = 1;
-monNum = 100;
+monNum = 1000;
 
-%% Find the peaks of the obtained range-velocity maps with noise-free signal.
 generator = Generator(Inf, nc, bw, f0, tc, tr, fs, r0, v0, a0, rcs);
 [noiseFreeSig] = generator.perform();
 
+%% Calculate the indexs of the peak for RDP.
 rdpEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF0, ...
     generator.mNs, generator.mNc, generator.mGamma);
-[~, rdpMap, ~] = rdpEstimator.perform(noiseFreeSig);
-[~, ind] = max(rdpMap(:));
-[rdpIv, rdpIr] = ind2sub(size(rdpMap), ind);
+rdpIr = round(r0 / generator.mDr) + 1;
+rdpIv = mod(round(v0 / generator.mDv) - nc / 2, nc) + 1;
+rdpCutIdx = [rdpIv, rdpIr]';
 
-vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+%% Calculate the indexs of the peak for VAIT.
+vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, generator.mF1, ...
     generator.mNs, generator.mNc, generator.mGamma);
-[~, vaitMap, ~] = vaitEstimator.perform(noiseFreeSig);
-[~, ind] = max(vaitMap(:));
-[vaitIv, vaitIr] = ind2sub(size(vaitMap), ind);
+vaitIr = mod(round((r0  + v0 * generator.mF0 / generator.mGamma) / ...
+    vaitEstimator.mDr), generator.mNs) + 1;
+vaitIv = mod(round(v0 / vaitEstimator.mDv) - nc / 2, nc) + 1;
+vaitCutIdx = [vaitIv, vaitIr]';
 
+%% Calculate the indexs of the peak for RFT.
 startVel = round(v0 / generator.mMaxVel / 2) * generator.mMaxVel * 2  - ...
     generator.mMaxVel;
 endVel = startVel + generator.mMaxVel * 2;
-rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF1, ...
     generator.mNs, generator.mNc, generator.mGamma, startVel, endVel);
-[~, rftMap, ~] = rftEstimator.perform(noiseFreeSig);
-[~, ind] = max(rftMap(:));
-[rftIv, rftIr] = ind2sub(size(rftMap), ind);
+rftIr = mod(round((r0 - v0 * nc * tr + v0 * generator.mF0 / ...
+    generator.mGamma) / generator.mDr), generator.mNs) + 1;
+rftIv = mod(round((v0 - startVel) / rftEstimator.mDv), rftEstimator.mNv) + 1;
+rftCutIdx = [rftIv, rftIr]';
 
 %% Run the Monte Carlo simulation.
 snrNum = length(inputSnr);
@@ -50,9 +54,9 @@ vaitOutputSnr = zeros(1, snrNum);
 rftOutputSnr = zeros(1, snrNum);
 parfor i = 1 : snrNum
     disp(i / snrNum)
-    rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+    rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF1, ...
         generator.mNs, generator.mNc, generator.mGamma, startVel, endVel);
-    rdpEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+    rdpEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF1, ...
         generator.mNs, generator.mNc, generator.mGamma);
     vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, ...
         generator.mF0, generator.mNs, generator.mNc, generator.mGamma);
@@ -65,8 +69,6 @@ parfor i = 1 : snrNum
     for j = 1 : monNum
 
         [sig] = generatorNew.perform();
-
-        % Caluculate the output SNRs of the peaks.
 
         % RFT
         [~, rftMap] = rftEstimator.perform(sig);
@@ -104,6 +106,7 @@ end
 theoOutputSnr = pow2db(generator.mNs * nc * db2pow(inputSnr) ./ ...
     (2 + 1 ./ db2pow(inputSnr)));
 
+%% Show the simulations results.
 figure();
 
 plot(inputSnr, theoOutputSnr, 'DisplayName', 'Theoretical');

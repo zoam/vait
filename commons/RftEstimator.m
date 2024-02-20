@@ -1,6 +1,3 @@
-% Written by: Maozhong Fu (maozhongfu@gmail.com)
-%
-% Distributed under the LGPL3 License.
 classdef RftEstimator < Estimator
 
     properties
@@ -8,7 +5,7 @@ classdef RftEstimator < Estimator
         mNs; % sample number
         mTs; % sample interval
         mGamma; % sweep slope
-        mF0; % ramp start frequency
+        mF1; % ramp start frequency
         mTr; % chirp repeating interval
         mNv;
         mStartVel;
@@ -16,17 +13,17 @@ classdef RftEstimator < Estimator
 
     methods
         % Initialize the corresponding parameters.
-        function obj = RftEstimator(tr, ts, f0, ns, nc, gamma, startVel, endVel)
-            obj.mMaxVel = obj.mC / (4 * tr * f0);
+        function obj = RftEstimator(tr, ts, f1, ns, nc, gamma, startVel, endVel)
+            obj.mMaxVel = obj.mC / (4 * tr * f1);
             obj.mMaxRng = obj.mC / (2 * ts * gamma);
-            obj.mDv = obj.mC / (2 * tr * nc * f0);
+            obj.mDv = obj.mC / (2 * tr * nc * f1);
             obj.mDr = obj.mC / (2 * ts * ns * gamma);
             obj.mRng = unigrid(0, obj.mDr, obj.mMaxRng, '[)');
             obj.mNc = nc;
             obj.mNs = ns;
             obj.mTs = ts;
             obj.mGamma = gamma;
-            obj.mF0 = f0;
+            obj.mF1 = f1;
             obj.mTr = tr;
             obj.mStartVel = startVel;
             obj.mNv = round((endVel - startVel) / obj.mDv);
@@ -38,7 +35,7 @@ classdef RftEstimator < Estimator
         function [obj, map, timeCost] = perform(obj, sig)
             startTime = clock; % start time
 
-            map = rft(sig, obj.mNc, obj.mNs, obj.mTs * obj.mGamma, obj.mF0, ...
+            map = rft(sig, obj.mNc, obj.mNs, obj.mTs * obj.mGamma, obj.mF1, ...
                 obj.mTr, obj.mDv, obj.mStartVel, obj.mNv, obj.mC);
 
             stopTime = clock; % stop time

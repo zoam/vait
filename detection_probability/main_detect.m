@@ -5,54 +5,53 @@ clc;
 addpath("../commons");
 
 %% Set up simulation parameters.
-snrStart = -45;
-% snrStart = -10;
+snrStart = -30;
 snrStep = 1;
 snrEnd = max(0, snrStart);
 snrList = snrStart : snrStep : snrEnd;
-nc = 128;
+nc = 512;
 bw = 150e6;
 f0 = 9e9;
-tc = 102.4e-6;
-tr = 120e-6;
-fs = 40e6;
-r0 = 80.42;
-v0 = 800.2;
-a0 = 600;
+tc = 500e-6;
+tr = 520e-6;
+fs = 5e5;
+r0 = 80.7;
+v0 = 30.02;
+a0 = 10;
 rcs = 1;
-pfa = 1e-6;
+pfa = 1e-9;
 thr = sqrt(-2 * log(pfa));
-monNum = 100;
+monNum = 1000;
 
 p = @(z, a, var) (z ./ var .* exp(-1 * (z.^2 + a^2) / 2 / var) .* ...
     besseli(0, z * a / var));
 
-%% Find the peaks of the obtained range-velocity maps with noise-free signal.
 generator = Generator(Inf, nc, bw, f0, tc, tr, fs, r0, v0, a0, rcs);
-[noNoiseSig] = generator.perform();
 
+%% Calculate the indexs of the peak for RDP.
 rdpEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF0, ...
     generator.mNs, generator.mNc, generator.mGamma);
-[~, rdpMap, ~] = rdpEstimator.perform(noNoiseSig);
-[~, ind] = max(rdpMap(:));
-[rdpIv, rdpIr] = ind2sub(size(rdpMap), ind);
-mtdCutIdx = [rdpIv, rdpIr]';
+rdpIr = round(r0 / generator.mDr) + 1;
+rdpIv = mod(round(v0 / generator.mDv) - nc / 2, nc) + 1;
+rdpCutIdx = [rdpIv, rdpIr]';
 
-vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+%% Calculate the indexs of the peak for VAIT.
+vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, generator.mF1, ...
     generator.mNs, generator.mNc, generator.mGamma);
-[~, vaitMap, ~] = vaitEstimator.perform(noNoiseSig);
-[~, ind] = max(vaitMap(:));
-[vaitIv, vaitIr] = ind2sub(size(vaitMap), ind);
+vaitIr = mod(round((r0  + v0 * generator.mF0 / generator.mGamma) / ...
+    vaitEstimator.mDr), generator.mNs) + 1;
+vaitIv = mod(round(v0 / vaitEstimator.mDv) - nc / 2, nc) + 1;
 vaitCutIdx = [vaitIv, vaitIr]';
 
+%% Calculate the indexs of the peak for RFT.
 startVel = round(v0 / generator.mMaxVel / 2) * generator.mMaxVel * 2  - ...
     generator.mMaxVel;
 endVel = startVel + generator.mMaxVel * 2;
-rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF1, ...
     generator.mNs, generator.mNc, generator.mGamma, startVel, endVel);
-[~, rftMap, ~] = rftEstimator.perform(noNoiseSig);
-[~, ind] = max(rftMap(:));
-[rftIv, rftIr] = ind2sub(size(rftMap), ind);
+rftIr = mod(round((r0 - v0 * nc * tr + v0 * generator.mF0 / ...
+    generator.mGamma) / generator.mDr), generator.mNs) + 1;
+rftIv = mod(round((v0 - startVel) / rftEstimator.mDv), rftEstimator.mNv) + 1;
 rftCutIdx = [rftIv, rftIr]';
 
 %% Run the Monte Carlo simulation.
@@ -68,12 +67,12 @@ parfor i = 1 : snrNum
     generator = Generator(inputSnr, nc, bw, f0, tc, tr, fs, r0, v0, a0, rcs);
     alpha = db2pow(inputSnr) * sqrt(nc * generator.mNs);
 
-    cfar2D = phased.CFARDetector2D('GuardBandSize', 4, 'TrainingBandSize', ...
-        10, 'ProbabilityFalseAlarm', pfa);
+    cfar2D = phased.CFARDetector2D('GuardBandSize', 3, 'TrainingBandSize', ...
+        6, 'ProbabilityFalseAlarm', pfa);
 
-    rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+    rftEstimator = RftEstimator(generator.mTr, generator.mTs, generator.mF1, ...
         generator.mNs, generator.mNc, generator.mGamma, startVel, endVel);
-    rdpEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF0, ...
+    rdpEstimator = RdpEstimator(generator.mTr, generator.mTs, generator.mF1, ...
         generator.mNs, generator.mNc, generator.mGamma);
     vaitEstimator = VaitEstimator(generator.mTr, generator.mTs, ...
         generator.mF0, generator.mNs, generator.mNc, generator.mGamma);
@@ -96,7 +95,7 @@ parfor i = 1 : snrNum
 
         % RDP
         [rdpEstimator, mtdMap] = rdpEstimator.perform(sig);
-        rdpHypo(j) = cfar2D(abs(mtdMap).^2, mtdCutIdx);
+        rdpHypo(j) = cfar2D(abs(mtdMap).^2, rdpCutIdx);
 
         % VAIT
         [vaitEstimator, vaitMap] = vaitEstimator.perform(sig);
@@ -108,6 +107,7 @@ parfor i = 1 : snrNum
     rftDetProb(i) = sum(rftHypo) / monNum;
 end
 
+%% Show the simulations results.
 lowSnrDetProb(isnan(lowSnrDetProb)) = 1;
 highSnrDetProb(isnan(highSnrDetProb)) = 1;
 figure();

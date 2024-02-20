@@ -1,6 +1,3 @@
-% Written by: Maozhong Fu (maozhongfu@gmail.com)
-%
-% Distributed under the LGPL3 License.
 classdef RdpEstimator < Estimator
     methods
         % Initialize the corresponding parameters.

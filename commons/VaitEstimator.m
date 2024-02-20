@@ -1,11 +1,4 @@
-% Written by: Maozhong Fu (maozhongfu@gmail.com)
-%
-% Distributed under the LGPL3 License.
 classdef VaitEstimator < Estimator
-
-    properties
-        mKappa; % phase correction term
-    end
 
     methods
         % Initialize the corresponding parameters.
@@ -17,8 +10,6 @@ classdef VaitEstimator < Estimator
             obj.mRng = unigrid(0, obj.mDr, obj.mMaxRng, '[)');
             obj.mVel = unigrid(-obj.mMaxVel, obj.mDv, obj.mMaxVel, '[)');
             [obj.mXAxis, obj.mYAxis] = meshgrid(obj.mRng, obj.mVel);
-            obj.mKappa = exp(-1i * 8 * pi / obj.mC * f1 * ...
-                ((0 : nc - 1).' * obj.mDv) * (0 : ns - 1) * ts);
         end
 
         % Perform VAIT on the given signal.
@@ -27,7 +18,7 @@ classdef VaitEstimator < Estimator
             startTime = clock; % start time
 
             y = sig .* conj(flip(flip(sig), 2));
-            map = fftshift(fft(fft(y, [], 1) .* obj.mKappa, [], 2), 1);
+            map = fftshift(fft(fft(y, [], 1), [], 2), 1);
 
             stopTime = clock; % stop time
             timeCost = etime(stopTime, startTime); % computational cost
